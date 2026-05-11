@@ -18,7 +18,6 @@ ENV DENO_INSTALL="/root/.deno"
 ENV PATH="${DENO_INSTALL}/bin:${PATH}"
 
 # Download yt-dlp challenge solver (cached at build time)
-RUN yt-dlp --remote-components ejs:github "https://www.youtube.com/watch?v=dQw4w9WgXcQ" --skip-download
 
 # Set working directory
 WORKDIR /app
@@ -34,7 +33,7 @@ COPY . .
 RUN mkdir -p temp
 
 # Expose port
-EXPOSE 3000
+EXPOSE 8080
 
 # Start the server
 CMD ["node", "server/index.js"]
