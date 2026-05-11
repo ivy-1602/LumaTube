@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>LumaTube</title>
+  <link rel="icon" type="image/png" href="images/favicon.png?v=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="ambient-layer" id="ambientLayer"></div>
+  <div class="noise-layer"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <img src="images/favicon.png" alt="LumaTube" class="brand-logo"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+        <div class="brand-logo-fallback">
+          <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
+            <rect width="36" height="36" rx="10" fill="url(#hGrad)"/>
+            <path d="M14 24.5C14 25.88 12.88 27 11.5 27C10.12 27 9 25.88 9 24.5C9 23.12 10.12 22 11.5 22C12.14 22 12.72 22.24 13.16 22.64L13.16 14.5L23 12V19.5C23 20.88 21.88 22 20.5 22C19.12 22 18 20.88 18 19.5C18 18.12 19.12 17 20.5 17C21.14 17 21.72 17.24 22.16 17.64V13.28L14 15.22V24.5Z" fill="white"/>
+            <defs>
+              <linearGradient id="hGrad" x1="0" y1="0" x2="36" y2="36">
+                <stop stop-color="#fc3c44"/><stop offset="1" stop-color="#f9485d"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="brand-name">LumaTube</span>
+      </div>
+      <nav class="header-nav">
+        <a href="#" class="hnav-link active" id="navDownload">Download</a>
+        <a href="#" class="hnav-link" id="navHistory">History</a>
+        <a href="#" class="hnav-link hnav-external" id="navOpenYT">
+          Open in YouTube
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+            <path d="M1 13L13 1M13 1H5M13 1v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- ── Download view (default) ── -->
+    <div id="downloadView">
+      <section class="hero">
+        <h1 class="hero-title">Paste. Process.<br/><span class="hero-red">Download.</span></h1>
+        <p class="hero-body">Your media, liberated. No ads, no noise, just quality.</p>
+      </section>
+
+      <section class="input-wrap">
+        <div class="input-field" id="inputField">
+          <svg class="input-search-icon" viewBox="0 0 16 16" fill="none">
+            <path d="M13.5 13.5L10 10M11.5 6.5a5 5 0 11-10 0 5 5 0 0110 0z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          <input type="text" id="urlInput" class="url-input" placeholder="Paste a YouTube link..."
+            autocomplete="off" spellcheck="false" />
+          <button class="fetch-btn" id="fetchBtn">Fetch</button>
+        </div>
+        <p class="input-sub" id="inputHint">Supports youtube.com and youtu.be links</p>
+      </section>
+
+      <!-- Loading -->
+      <div class="card hidden" id="loadingCard">
+        <div class="loading-row">
+          <div class="spinner-wrap">
+            <svg class="spin-svg" viewBox="0 0 40 40">
+              <circle class="spin-track" cx="20" cy="20" r="16" fill="none" stroke-width="2.5"/>
+              <circle class="spin-arc" cx="20" cy="20" r="16" fill="none" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <div class="stage-list">
+            <p class="stage-item active" id="st0">Fetching metadata</p>
+            <p class="stage-item" id="st1">Preparing stream</p>
+            <p class="stage-item" id="st2">Processing media</p>
+            <p class="stage-item" id="st3">Finalizing download</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div class="card hidden" id="errorCard">
+        <div class="error-row">
+          <div class="error-dot"></div>
+          <div class="error-text-wrap">
+            <p class="error-heading">Unable to fetch</p>
+            <p class="error-detail" id="errorText">Check the link and try again.</p>
+          </div>
+          <button class="retry-btn" id="retryBtn">Retry</button>
+        </div>
+      </div>
+
+      <!-- Media Card -->
+      <div class="card media-card hidden" id="infoCard">
+        <div class="artwork-section">
+          <div class="artwork-frame">
+            <img class="artwork-img" id="thumbnail" src="" alt="" />
+            <div class="artwork-time" id="durationBadge">0:00</div>
+          </div>
+          <div class="artwork-meta">
+            <p class="meta-artist" id="videoChannel">–</p>
+            <h2 class="meta-title" id="videoTitle">–</h2>
+            <p class="meta-views" id="videoViews"></p>
+            <div class="meta-status">
+              <span class="status-dot"></span>
+              Ready to download
+            </div>
+          </div>
+        </div>
+
+        <div class="rule"></div>
+
+        <div class="section-block">
+          <p class="section-label">Format</p>
+          <div class="chip-row" id="formatChips">
+            <button class="chip active" data-format="mp4">
+              <svg viewBox="0 0 14 14" fill="none" width="12" height="12"><rect x="1" y="2" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 5l4 2-4 2V5z" fill="currentColor"/></svg>
+              MP4 Video
+            </button>
+            <button class="chip" data-format="mp3">
+              <svg viewBox="0 0 14 14" fill="none" width="12" height="12"><circle cx="3.5" cy="10.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="10.5" cy="9.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 10.5V5L12 3.5v5.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              MP3 Audio
+            </button>
+          </div>
+        </div>
+
+        <div class="section-block" id="qualitySection">
+          <p class="section-label">Quality</p>
+          <div class="chip-row" id="qualityGrid"></div>
+        </div>
+
+        <div class="rule"></div>
+
+        <button class="dl-btn" id="downloadBtn">
+          <div class="dl-btn-left">
+            <div class="dl-btn-icon">
+              <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
+                <path d="M7 1v9M3.5 7l3.5 3.5L10.5 7M1.5 13h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span id="downloadLabel">Download</span>
+          </div>
+          <span class="dl-size" id="dlSize"></span>
+        </button>
+
+        <div class="progress-wrap hidden" id="progressWrap">
+          <div class="progress-chips">
+            <span class="p-chip active" id="pc0">Downloading</span>
+            <span class="p-chip" id="pc1">Converting</span>
+            <span class="p-chip" id="pc2">Tagging</span>
+            <span class="p-chip" id="pc3">Sending</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── History view ── -->
+    <div id="historyView" class="hidden">
+      <section class="hero">
+        <h1 class="hero-title" style="font-size:clamp(1.8rem,4vw,2.6rem)">Download<br/><span class="hero-red">History</span></h1>
+        <p class="hero-body">Everything you've grabbed this session.</p>
+      </section>
+
+      <div class="card" id="historyCard">
+        <div id="historyList">
+          <div class="history-empty">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style="margin-bottom:10px;opacity:0.3">
+              <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M16 10v7M16 20v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <p>No downloads yet this session.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">© 2026 USS · LumaTube · Personal use only</footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
