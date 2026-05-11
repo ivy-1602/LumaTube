@@ -10,12 +10,12 @@ if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
 // ── Cookies ─────────────────────────────────────────────
 const COOKIES_PATH = path.join(__dirname, "../cookies.txt");
-const cookiesArgs = fs.existsSync(COOKIES_PATH) ? ["--cookies", COOKIES_PATH] : [];
 
-// ── PO Token args (bgutil-ytdlp-pot-provider plugin) ────
-const potArgs = [
-  "--extractor-args", "youtube:player_client=mweb,web;po_token=mweb+auto,web+auto",
-];
+if (process.env.COOKIES_CONTENT && !fs.existsSync(COOKIES_PATH)) {
+  fs.writeFileSync(COOKIES_PATH, process.env.COOKIES_CONTENT, "utf8");
+}
+
+const cookiesArgs = fs.existsSync(COOKIES_PATH) ? ["--cookies", COOKIES_PATH] : [];
 
 // ── Helpers ─────────────────────────────────────────────
 
