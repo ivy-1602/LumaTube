@@ -17,6 +17,11 @@ if (process.env.COOKIES_CONTENT && !fs.existsSync(COOKIES_PATH)) {
 
 const cookiesArgs = fs.existsSync(COOKIES_PATH) ? ["--cookies", COOKIES_PATH] : [];
 
+// ── PO Token args (bgutil-ytdlp-pot-provider plugin) ────
+const potArgs = [
+  "--extractor-args", "youtube:player_client=mweb,web;po_token=mweb+auto,web+auto",
+];
+
 // ── Helpers ─────────────────────────────────────────────
 
 function runYtDlp(args) {
@@ -140,7 +145,7 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
     outputPath = path.join(TEMP_DIR, filename);
     mimeType = "video/mp4";
     ytArgs = [
-      "-f", `bestvideo[height<=${height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=${height}]+bestaudio/best[height<=${height}]/best`,
+      "-f", `bestvideo[height<=${height}][ext=mp4]+bestaudio[ext=m4a]/bestaudio[ext=m4a]/bestvideo[height<=${height}]+bestaudio/best[height<=${height}]/best`,
       "--merge-output-format", "mp4",
       "--embed-thumbnail",
       "--embed-metadata",
