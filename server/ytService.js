@@ -12,6 +12,11 @@ if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 const COOKIES_PATH = path.join(__dirname, "../cookies.txt");
 const cookiesArgs = fs.existsSync(COOKIES_PATH) ? ["--cookies", COOKIES_PATH] : [];
 
+// ── PO Token args (bgutil-ytdlp-pot-provider plugin) ────
+const potArgs = [
+  "--extractor-args", "youtube:player_client=mweb,web;po_token=mweb+auto,web+auto",
+];
+
 // ── Helpers ─────────────────────────────────────────────
 
 function runYtDlp(args) {
@@ -50,6 +55,7 @@ async function getVideoInfo(url) {
     "--dump-json",
     "--no-playlist",
     "--no-warnings",
+    ...potArgs,
     ...cookiesArgs,
     url,
   ]);
@@ -125,6 +131,7 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
       "-o", outputPath,
       "--no-playlist",
       "--no-warnings",
+      ...potArgs,
       ...cookiesArgs,
       url,
     ];
@@ -141,6 +148,7 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
       "-o", outputPath,
       "--no-playlist",
       "--no-warnings",
+      ...potArgs,
       ...cookiesArgs,
       url,
     ];
@@ -152,7 +160,7 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
     throw new Error("Downloaded file not found. Conversion may have failed.");
   }
 
-  const info = await runYtDlp(["--print", "title", "--no-playlist", "--no-warnings", ...cookiesArgs, url]);
+  const info = await runYtDlp(["--print", "title", "--no-playlist", "--no-warnings", ...potArgs, ...cookiesArgs, url]);
   const ext = format === "mp3" ? "mp3" : "mp4";
   const safeTitle = info
     .replace(/[\\/:*?"<>|]/g, "")
