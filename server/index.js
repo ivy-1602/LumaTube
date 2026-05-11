@@ -1,11 +1,20 @@
+const fs = require("fs");
+const path = require("path");
+
+// Write cookies from env variable to file
+if (process.env.YT_COOKIES) {
+  const cookiesPath = path.join(__dirname, "../cookies.txt");
+  fs.writeFileSync(cookiesPath, process.env.YT_COOKIES);
+  console.log("✅ cookies.txt written from env");
+}
+
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 const { getVideoInfo, downloadMedia } = require("./ytService");
 const { cleanupTempFiles } = require("./tempManager");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -16,7 +25,6 @@ setInterval(cleanupTempFiles, 10 * 60 * 1000);
 
 // ── Routes ──────────────────────────────────────────────
 
-// POST /api/info — fetch video metadata (no download)
 app.post("/api/info", async (req, res) => {
   const { url } = req.body;
   if (!url || !url.trim()) {
@@ -32,7 +40,6 @@ app.post("/api/info", async (req, res) => {
   }
 });
 
-// POST /api/download — stream file back to browser
 app.post("/api/download", async (req, res) => {
   const { url, format, quality } = req.body;
   if (!url) return res.status(400).json({ error: "URL is required" });
@@ -44,12 +51,10 @@ app.post("/api/download", async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
     res.setHeader("Content-Type", mimeType);
 
-    const fs = require("fs");
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
 
     stream.on("end", () => {
-      // Delete temp file after stream ends
       fs.unlink(filePath, (err) => {
         if (err) console.warn("Could not delete temp file:", filePath);
       });
