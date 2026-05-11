@@ -8,13 +8,16 @@ const TEMP_DIR = path.join(__dirname, "../temp");
 // Ensure temp dir exists
 if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
+// ── Cookies ─────────────────────────────────────────────
+const COOKIES_PATH = path.join(__dirname, "../cookies.txt");
+const cookiesArgs = fs.existsSync(COOKIES_PATH) ? ["--cookies", COOKIES_PATH] : [];
+
 // ── Helpers ─────────────────────────────────────────────
 
 function runYtDlp(args) {
   return new Promise((resolve, reject) => {
     execFile("yt-dlp", args, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
       if (err) {
-        // Extract clean error message from yt-dlp output
         const msg = stderr || err.message || "yt-dlp failed";
         const clean = msg.split("\n").find((l) => l.includes("ERROR")) || msg;
         return reject(new Error(clean.replace(/^.*ERROR:\s*/, "").trim()));
@@ -34,7 +37,6 @@ function formatDuration(seconds) {
 }
 
 function estimateSize(bitrate, durationSeconds, multiplier = 1) {
-  // rough estimate: bitrate(kbps) * duration(s) / 8 = bytes
   if (!bitrate || !durationSeconds) return null;
   const bytes = (bitrate * 1000 * durationSeconds * multiplier) / 8;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -48,12 +50,12 @@ async function getVideoInfo(url) {
     "--dump-json",
     "--no-playlist",
     "--no-warnings",
+    ...cookiesArgs,
     url,
   ]);
 
   const data = JSON.parse(raw);
 
-  // Build quality options from available formats
   const targetHeights = [144, 240, 360, 480, 720, 1080];
   const seenHeights = new Set();
   const qualities = [];
@@ -75,10 +77,8 @@ async function getVideoInfo(url) {
     }
   }
 
-  // Sort ascending
   qualities.sort((a, b) => a.height - b.height);
 
-  // MP3 estimate (audio-only, ~128kbps)
   const audioFormat = (data.formats || [])
     .filter((f) => f.acodec && f.acodec !== "none" && (!f.vcodec || f.vcodec === "none"))
     .sort((a, b) => (b.abr || 0) - (a.abr || 0))[0];
@@ -106,7 +106,6 @@ async function getVideoInfo(url) {
 async function downloadMedia(url, format = "mp4", quality = "720") {
   const id = uuidv4();
 
-  // Sanitize quality input
   const height = parseInt(quality, 10) || 720;
 
   let outputPath, filename, mimeType, ytArgs;
@@ -119,13 +118,14 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
       "-x",
       "--audio-format", "mp3",
       "--audio-quality", "0",
-      "--embed-thumbnail",          // album art
-      "--embed-metadata",           // title, artist, album
+      "--embed-thumbnail",
+      "--embed-metadata",
       "--add-metadata",
-      "--parse-metadata", "%(uploader)s:%(meta_artist)s",  // map uploader → artist tag
+      "--parse-metadata", "%(uploader)s:%(meta_artist)s",
       "-o", outputPath,
       "--no-playlist",
       "--no-warnings",
+      ...cookiesArgs,
       url,
     ];
   } else {
@@ -135,25 +135,24 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
     ytArgs = [
       "-f", `bestvideo[height<=${height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=${height}]+bestaudio/best[height<=${height}]/best`,
       "--merge-output-format", "mp4",
-      "--embed-thumbnail",          // thumbnail as cover art
-      "--embed-metadata",           // title, uploader, etc.
+      "--embed-thumbnail",
+      "--embed-metadata",
       "--add-metadata",
       "-o", outputPath,
       "--no-playlist",
       "--no-warnings",
+      ...cookiesArgs,
       url,
     ];
   }
 
   await runYtDlp(ytArgs);
 
-  // Check file actually exists
   if (!fs.existsSync(outputPath)) {
     throw new Error("Downloaded file not found. Conversion may have failed.");
   }
 
-  // Build a clean filename from the actual video title
-    const info = await runYtDlp(["--print", "title", "--no-playlist", "--no-warnings", url]);
+  const info = await runYtDlp(["--print", "title", "--no-playlist", "--no-warnings", ...cookiesArgs, url]);
   const ext = format === "mp3" ? "mp3" : "mp4";
   const safeTitle = info
     .replace(/[\\/:*?"<>|]/g, "")
