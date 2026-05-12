@@ -8,6 +8,9 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 
+/* ── API Base URL ────────────────────────────────────── */
+const API_BASE = "https://ruckus-straw-backwash.ngrok-free.dev";
+
 /* ── DOM ─────────────────────────────────────────────── */
 const urlInput       = $("urlInput");
 const fetchBtn       = $("fetchBtn");
@@ -58,7 +61,6 @@ navOpenYT.addEventListener("click", (e) => {
   if (url) {
     window.open(url, "_blank", "noopener");
   } else {
-    // Nudge the input
     urlInput.focus();
     inputHint.textContent = "⚠ Paste a YouTube URL first, then click Open in YouTube";
     inputHint.style.color = "var(--red)";
@@ -184,9 +186,12 @@ async function fetchVideoInfo(url) {
   resetStages(); startStages();
 
   try {
-    const res = await fetch("/api/info", {
+    const res = await fetch(`${API_BASE}/api/info`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
       body: JSON.stringify({ url }),
     });
     stopStages();
@@ -292,9 +297,12 @@ async function triggerDownload() {
   }, 500);
 
   try {
-    const res = await fetch("/api/download", {
+    const res = await fetch(`${API_BASE}/api/download`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
       body: JSON.stringify({ url, format, quality }),
     });
     clearInterval(progInt); stopDlStages();
