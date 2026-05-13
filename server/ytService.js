@@ -11,7 +11,6 @@ if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 // ── Cookies ─────────────────────────────────────────────
 const COOKIES_PATH = path.join(__dirname, "../cookies.txt");
 
-// Support both YT_COOKIES (index.js) and COOKIES_CONTENT variable names
 const cookieEnv = process.env.YT_COOKIES || process.env.COOKIES_CONTENT;
 if (cookieEnv && !fs.existsSync(COOKIES_PATH)) {
   fs.writeFileSync(COOKIES_PATH, cookieEnv, "utf8");
@@ -20,7 +19,7 @@ if (cookieEnv && !fs.existsSync(COOKIES_PATH)) {
 
 const cookiesArgs = fs.existsSync(COOKIES_PATH) ? ["--cookies", COOKIES_PATH] : [];
 
-// ── PO Token args ────────────────────────────────────────
+// ── PO Token args — info fetch only ─────────────────────
 const potArgs = [
   "--extractor-args", "youtube:player_client=mweb,web;po_token=mweb+auto,web+auto",
 ];
@@ -64,7 +63,7 @@ async function getVideoInfo(url) {
     "--dump-json",
     "--no-playlist",
     "--no-warnings",
-    ...potArgs,
+    ...potArgs,       // ← only here for info fetch
     ...cookiesArgs,
     url,
   ]);
@@ -127,7 +126,7 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
       "-o", outputPath,
       "--no-playlist",
       "--no-warnings",
-      ...potArgs,
+      // no potArgs here — use default client for actual download
       ...cookiesArgs,
       url,
     ];
@@ -141,7 +140,7 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
       "-o", outputPath,
       "--no-playlist",
       "--no-warnings",
-      ...potArgs,
+      // no potArgs here — use default client for actual download
       ...cookiesArgs,
       url,
     ];
@@ -153,7 +152,14 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
     throw new Error("Downloaded file not found. Conversion may have failed.");
   }
 
-  const info = await runYtDlp(["--print", "title", "--no-playlist", "--no-warnings", ...potArgs, ...cookiesArgs, url]);
+  const info = await runYtDlp([
+    "--print", "title",
+    "--no-playlist",
+    "--no-warnings",
+    ...cookiesArgs,
+    url,
+  ]);
+
   const ext = format === "mp3" ? "mp3" : "mp4";
   const safeTitle = info
     .replace(/[\\/:*?"<>|]/g, "")
