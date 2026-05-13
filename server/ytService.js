@@ -1,4 +1,4 @@
-const { execFile, spawn } = require("child_process");
+const { execFile } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
@@ -11,13 +11,16 @@ if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 // ── Cookies ─────────────────────────────────────────────
 const COOKIES_PATH = path.join(__dirname, "../cookies.txt");
 
-if (process.env.COOKIES_CONTENT && !fs.existsSync(COOKIES_PATH)) {
-  fs.writeFileSync(COOKIES_PATH, process.env.COOKIES_CONTENT, "utf8");
+// Support both YT_COOKIES (index.js) and COOKIES_CONTENT variable names
+const cookieEnv = process.env.YT_COOKIES || process.env.COOKIES_CONTENT;
+if (cookieEnv && !fs.existsSync(COOKIES_PATH)) {
+  fs.writeFileSync(COOKIES_PATH, cookieEnv, "utf8");
+  console.log("✅ cookies.txt written from env");
 }
 
 const cookiesArgs = fs.existsSync(COOKIES_PATH) ? ["--cookies", COOKIES_PATH] : [];
 
-// ── PO Token args (bgutil-ytdlp-pot-provider plugin) ────
+// ── PO Token args ────────────────────────────────────────
 const potArgs = [
   "--extractor-args", "youtube:player_client=mweb,web;po_token=mweb+auto,web+auto",
 ];
@@ -25,8 +28,9 @@ const potArgs = [
 // ── Helpers ─────────────────────────────────────────────
 
 function runYtDlp(args) {
+  console.log("[yt-dlp]", args.join(" "));
   return new Promise((resolve, reject) => {
-    execFile("yt-dlp", args, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+    execFile("yt-dlp", args, { maxBuffer: 50 * 1024 * 1024 }, (err, stdout, stderr) => {
       if (err) {
         const msg = stderr || err.message || "yt-dlp failed";
         const clean = msg.split("\n").find((l) => l.includes("ERROR")) || msg;
@@ -90,10 +94,6 @@ async function getVideoInfo(url) {
 
   qualities.sort((a, b) => a.height - b.height);
 
-  const audioFormat = (data.formats || [])
-    .filter((f) => f.acodec && f.acodec !== "none" && (!f.vcodec || f.vcodec === "none"))
-    .sort((a, b) => (b.abr || 0) - (a.abr || 0))[0];
-
   const mp3EstimatedSize = estimateSize(128, data.duration);
 
   return {
@@ -102,13 +102,9 @@ async function getVideoInfo(url) {
     duration: formatDuration(data.duration),
     durationSeconds: data.duration,
     channel: data.uploader || data.channel,
-    viewCount: data.view_count
-      ? Number(data.view_count).toLocaleString()
-      : null,
+    viewCount: data.view_count ? Number(data.view_count).toLocaleString() : null,
     qualities,
-    mp3: {
-      estimatedSize: mp3EstimatedSize,
-    },
+    mp3: { estimatedSize: mp3EstimatedSize },
   };
 }
 
@@ -116,7 +112,6 @@ async function getVideoInfo(url) {
 
 async function downloadMedia(url, format = "mp4", quality = "720") {
   const id = uuidv4();
-
   const height = parseInt(quality, 10) || 720;
 
   let outputPath, filename, mimeType, ytArgs;
@@ -129,10 +124,6 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
       "-x",
       "--audio-format", "mp3",
       "--audio-quality", "0",
-      "--embed-thumbnail",
-      "--embed-metadata",
-      "--add-metadata",
-      "--parse-metadata", "%(uploader)s:%(meta_artist)s",
       "-o", outputPath,
       "--no-playlist",
       "--no-warnings",
@@ -145,11 +136,8 @@ async function downloadMedia(url, format = "mp4", quality = "720") {
     outputPath = path.join(TEMP_DIR, filename);
     mimeType = "video/mp4";
     ytArgs = [
-      "-f", `bestvideo[height<=${height}][ext=mp4]+bestaudio[ext=m4a]/bestaudio[ext=m4a]/bestvideo[height<=${height}]+bestaudio/best[height<=${height}]/best`,
+      "-f", `bestvideo[height<=${height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=${height}]+bestaudio/best[height<=${height}]/best`,
       "--merge-output-format", "mp4",
-      "--embed-thumbnail",
-      "--embed-metadata",
-      "--add-metadata",
       "-o", outputPath,
       "--no-playlist",
       "--no-warnings",

@@ -1,10 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 
-// Write cookies from env variable to file
-if (process.env.YT_COOKIES) {
+// Write cookies from env variable to file (support both variable names)
+const cookieEnv = process.env.YT_COOKIES || process.env.COOKIES_CONTENT;
+if (cookieEnv) {
   const cookiesPath = path.join(__dirname, "../cookies.txt");
-  fs.writeFileSync(cookiesPath, process.env.YT_COOKIES);
+  fs.writeFileSync(cookiesPath, cookieEnv, "utf8");
   console.log("✅ cookies.txt written from env");
 }
 
